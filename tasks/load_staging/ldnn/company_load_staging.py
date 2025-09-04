@@ -6,8 +6,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Load LDNN company JSON to staging table")
     parser.add_argument('--json-path', type=str, required=True, help='Path to JSON file')
     parser.add_argument('--update-time', type=str, required=True, help='Update time (YYYY-MM-DD)')
+    parser.add_argument('--config', type=str, required=True, help='Path to mapping toml config')
     args = parser.parse_args()
 
-    loader = LDNNCompanyStagingLoader()
+    loader = LDNNCompanyStagingLoader(config_path=args.config)
     loader.load_json(args.json_path, args.update_time)
     loader.stop()

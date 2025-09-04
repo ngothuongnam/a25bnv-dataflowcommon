@@ -7,7 +7,7 @@ import subprocess
 
 PROJECT_ROOT = '/home/hadoop/a25bnv-dataflowcommon'
 
-# Hàm thực thi ETL
+# Fetch API task
 def run_company_etl(**context):
     update_time = context['params']['update_time']
     config_path = os.path.join(PROJECT_ROOT, 'configuration', 'fetch', 'ldnn', 'company.toml')
@@ -19,13 +19,23 @@ def run_company_etl(**context):
     if result.returncode != 0:
         raise Exception(f"ETL script failed.\nStdout:\n{result.stdout}\nStderr:\n{result.stderr}")
 
-# Task load staging
+# Load staging task
 def run_company_load_staging(**context):
     update_time = context['params']['update_time']
+    mapping_config = os.path.join(PROJECT_ROOT, 'configuration', 'load_staging', 'ldnn', 'company.toml')
     dt = datetime.strptime(update_time, "%Y-%m-%d")
     json_path = f"/user/hadoop/api/ldnn/company/yyyy={dt.year}/mm={dt.month:02d}/dd={dt.day:02d}/data.json"
     script_path = os.path.join(PROJECT_ROOT, 'tasks', 'load_staging', 'ldnn', 'company_load_staging.py')
-    result = subprocess.run([sys.executable, script_path, '--json-path', json_path, '--update-time', update_time], capture_output=True, text=True)
+    cmd = [
+        "spark-submit",
+        "--master", "yarn",
+        "--deploy-mode", "cluster",
+        script_path,
+        "--json-path", json_path,
+        "--update-time", update_time,
+        "--config", mapping_config
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
     print(result.stdout)
     print(result.stderr)
     if result.returncode != 0:
@@ -40,7 +50,7 @@ default_args = {
 }
 
 dag = DAG(
-    dag_id='ldnn_company_to_hdfs',
+    dag_id='ldnn_company_flow',
     default_args=default_args,
     start_date=datetime(2025, 9, 1),
     schedule_interval=None,
