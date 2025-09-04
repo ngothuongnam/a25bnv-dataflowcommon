@@ -15,4 +15,5 @@ if __name__ == "__main__":
         config = tomli.load(f)
     handler = LDNNCompanyHandler(config)
     success = handler.run(update_time=args.update_time)
-    sys.exit(0 if success else 1)
+    if not success:
+        print("ETL task finished but failed (not uploaded to HDFS or no data)")
