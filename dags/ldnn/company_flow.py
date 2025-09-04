@@ -19,6 +19,18 @@ def run_company_etl(**context):
     if result.returncode != 0:
         raise Exception(f"ETL script failed.\nStdout:\n{result.stdout}\nStderr:\n{result.stderr}")
 
+# Task load staging
+def run_company_load_staging(**context):
+    update_time = context['params']['update_time']
+    dt = datetime.strptime(update_time, "%Y-%m-%d")
+    json_path = f"/user/hadoop/api/ldnn/company/yyyy={dt.year}/mm={dt.month:02d}/dd={dt.day:02d}/data.json"
+    script_path = os.path.join(PROJECT_ROOT, 'tasks', 'load_staging', 'ldnn', 'company_load_staging.py')
+    result = subprocess.run([sys.executable, script_path, '--json-path', json_path, '--update-time', update_time], capture_output=True, text=True)
+    print(result.stdout)
+    print(result.stderr)
+    if result.returncode != 0:
+        raise Exception(f"Staging load failed.\nStdout:\n{result.stdout}\nStderr:\n{result.stderr}")
+
 
 default_args = {
     'owner': 'hadoop',
@@ -45,4 +57,13 @@ step1_task = PythonOperator(
     provide_context=True,
     dag=dag,
 )
+
+step2_task = PythonOperator(
+    task_id='ldnn_company_load_staging',
+    python_callable=run_company_load_staging,
+    provide_context=True,
+    dag=dag,
+)
+
+step1_task >> step2_task
 
