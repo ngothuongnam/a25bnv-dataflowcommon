@@ -29,12 +29,13 @@ def run_company_load_staging(**context):
     cmd = [
         "spark-submit",
         "--master", "yarn",
-        "--deploy-mode", "cluster",
+        "--deploy-mode", "client",
         script_path,
         "--json-path", json_path,
         "--update-time", update_time,
         "--config", mapping_config
     ]
+    print("[DEBUG] spark-submit command:", " ".join(cmd))
     result = subprocess.run(cmd, capture_output=True, text=True)
     print(result.stdout)
     print(result.stderr)
