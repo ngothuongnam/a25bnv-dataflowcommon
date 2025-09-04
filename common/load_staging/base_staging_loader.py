@@ -21,7 +21,7 @@ class BaseStagingLoader:
             print(f"File {json_path} not found on HDFS. Skipping staging load.")
             return
         update_time_str = update_time.replace("-", "")
-    df = self.spark.read.option("multiLine", True).json(json_path)
+        df = self.spark.read.option("multiLine", True).json(json_path)
         df = df.withColumn("update_time", lit(update_time_str))
         if self.mapping:
             df = self.apply_mapping(df)
