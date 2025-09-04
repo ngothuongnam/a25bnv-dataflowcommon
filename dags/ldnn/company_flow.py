@@ -27,7 +27,7 @@ def run_company_load_staging(**context):
     json_path = f"/user/hadoop/api/ldnn/company/yyyy={dt.year}/mm={dt.month:02d}/dd={dt.day:02d}/data.json"
     script_path = os.path.join(PROJECT_ROOT, 'tasks', 'load_staging', 'ldnn', 'company_load_staging.py')
     cmd = [
-        "spark-submit",
+        "/home/hadoop/spark-3.3.1/bin/spark-submit",
         "--master", "yarn",
         "--deploy-mode", "client",
         script_path,
