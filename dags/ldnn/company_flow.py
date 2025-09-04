@@ -12,7 +12,8 @@ def run_company_etl(**context):
     update_time = context['params']['update_time']
     config_path = os.path.join(PROJECT_ROOT, 'configuration', 'fetch', 'ldnn', 'company.toml')
     script_path = os.path.join(PROJECT_ROOT, 'tasks', 'fetch', 'ldnn', 'company_fetch.py')
-    cmd = f"conda activate hadoop && {sys.executable} {script_path} --config {config_path} --update-time {update_time}"
+    python_bin = "/home/hadoop/miniconda3/envs/hadoop/bin/python"
+    cmd = f"{python_bin} {script_path} --config {config_path} --update-time {update_time}"
     result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     print(result.stdout)
     print(result.stderr)
@@ -26,7 +27,8 @@ def run_company_load_staging(**context):
     dt = datetime.strptime(update_time, "%Y-%m-%d")
     json_path = f"/user/hadoop/api/ldnn/company/yyyy={dt.year}/mm={dt.month:02d}/dd={dt.day:02d}/data.json"
     script_path = os.path.join(PROJECT_ROOT, 'tasks', 'load_staging', 'ldnn', 'company_load_staging.py')
-    cmd = f"conda activate hadoop && /home/hadoop/spark-3.3.1/bin/spark-submit --master yarn --deploy-mode client {script_path} --json-path {json_path} --update-time {update_time} --config {mapping_config}"
+    python_bin = "/home/hadoop/miniconda3/envs/hadoop/bin/python"
+    cmd = f"/home/hadoop/spark-3.3.1/bin/spark-submit --master yarn --deploy-mode client --conf spark.yarn.appMasterEnv.PYSPARK_PYTHON={python_bin} --conf spark.executorEnv.PYSPARK_PYTHON={python_bin} {script_path} --json-path {json_path} --update-time {update_time} --config {mapping_config}"
     print("[DEBUG] spark-submit command:", cmd)
     result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     print(result.stdout)
