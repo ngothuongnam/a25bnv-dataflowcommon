@@ -32,7 +32,12 @@ class BaseStagingLoader:
         return df.selectExpr(*select_expr)
 
     def write_to_staging(self, df):
-        df.write.mode("overwrite").format("parquet").partitionBy("update_time").saveAsTable(self.table_name)
+        # Drop old partition if exists
+        update_time_values = df.select("update_time").distinct().rdd.flatMap(lambda x: x).collect()
+        for update_time_str in update_time_values:
+            self.spark.sql(f"ALTER TABLE {self.table_name} DROP IF EXISTS PARTITION (update_time='{update_time_str}')")
+        # Append new data to partition
+        df.write.mode("append").format("parquet").partitionBy("update_time").saveAsTable(self.table_name)
 
     def stop(self):
         self.spark.stop()
