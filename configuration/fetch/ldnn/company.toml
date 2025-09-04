@@ -1,0 +1,14 @@
+[api]
+url = "http://103.194.188.140:7001"
+endpoint = "/api/ioc/get-list-paging-company"
+key = "iOCDolab23@5"
+extra_params = "{}"
+
+[hdfs]
+dir = "/user/hadoop/api/ldnn"
+
+[local]
+dir = "/home/hadoop/api/ldnn"
+
+[partition]
+name = "company"
