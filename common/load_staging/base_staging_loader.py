@@ -22,9 +22,9 @@ class BaseStagingLoader:
             return
         update_time_str = update_time.replace("-", "")
         df = self.spark.read.option("multiLine", True).json(json_path)
-        df = df.withColumn("update_time", lit(update_time_str))
         if self.mapping:
             df = self.apply_mapping(df)
+        df = df.withColumn("update_time", lit(update_time_str))
         self.write_to_staging(df)
 
     def apply_mapping(self, df):
