@@ -16,4 +16,4 @@ if __name__ == "__main__":
     handler = LDNNCompanyHandler(config)
     success = handler.run(update_time=args.update_time)
     if not success:
-        print("ETL task finished but failed (not uploaded to HDFS or no data)")
+        print(f"ETL task finished but failed with update_time={args.update_time} (not uploaded to HDFS or no data)")
