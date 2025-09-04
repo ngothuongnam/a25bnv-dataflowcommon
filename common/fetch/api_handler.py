@@ -3,6 +3,7 @@ import json
 import requests
 from datetime import datetime
 import subprocess
+import time
 
 class ApiHandler:
     def __init__(self, config):
@@ -25,6 +26,7 @@ class ApiHandler:
         while True:
             if next_cursor:
                 params['nextCursor'] = next_cursor
+                time.sleep(1)  # Delay 1 giây mỗi lần gọi trang tiếp theo
             resp = requests.get(url, headers=headers, params=params, timeout=30)
             resp.raise_for_status()
             data = resp.json()

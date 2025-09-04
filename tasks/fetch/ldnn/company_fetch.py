@@ -1,6 +1,6 @@
 import sys
 import os
-import toml
+import tomli
 from common.fetch.ldnn.company_handler import LDNNCompanyHandler
 from datetime import datetime
 
@@ -11,7 +11,8 @@ if __name__ == "__main__":
     parser.add_argument('--update-time', type=str, required=True, help='API updateTime param (YYYY-MM-DD)')
     args = parser.parse_args()
 
-    config = toml.load(args.config)
+    with open(args.config, 'rb') as f:
+        config = tomli.load(f)
     handler = LDNNCompanyHandler(config)
     success = handler.run(update_time=args.update_time)
     sys.exit(0 if success else 1)
