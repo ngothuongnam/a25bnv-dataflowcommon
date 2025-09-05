@@ -10,10 +10,6 @@ PROJECT_ROOT = '/home/hadoop/a25bnv-dataflowcommon'
 # Fetch API task
 def run_company_etl(**context):
     update_time = context['params'].get('update_time')
-    # Nếu update_time là template hoặc không truyền, tự động lấy execution_date - 1 ngày
-    if not update_time or '{{' in str(update_time):
-        execution_date = context['execution_date']
-        update_time = (execution_date - timedelta(days=1)).strftime('%Y-%m-%d')
     config_path = os.path.join(PROJECT_ROOT, 'configuration', 'fetch', 'ldnn', 'company.toml')
     script_path = os.path.join(PROJECT_ROOT, 'tasks', 'fetch', 'ldnn', 'company_fetch.py')
     python_bin = "/home/hadoop/miniconda3/envs/hadoop/bin/python"
@@ -27,9 +23,6 @@ def run_company_etl(**context):
 # Load staging task
 def run_company_load_staging(**context):
     update_time = context['params'].get('update_time')
-    if not update_time or '{{' in str(update_time):
-        execution_date = context['execution_date']
-        update_time = (execution_date - timedelta(days=1)).strftime('%Y-%m-%d')
     mapping_config = os.path.join(PROJECT_ROOT, 'configuration', 'load_staging', 'ldnn', 'company.toml')
     dt = datetime.strptime(update_time, "%Y-%m-%d")
     json_path = f"/user/hadoop/api/ldnn/company/yyyy={dt.year}/mm={dt.month:02d}/dd={dt.day:02d}/data.json"
