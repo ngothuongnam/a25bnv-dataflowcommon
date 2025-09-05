@@ -1,7 +1,7 @@
 import sys
 import os
 import tomli
-from common.fetch.ldnn.company_handler import LDNNCompanyHandler
+from common.fetch.ldnn.company_handler import CompanyHandler
 from datetime import datetime
 
 if __name__ == "__main__":
@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
     with open(args.config, 'rb') as f:
         config = tomli.load(f)
-    handler = LDNNCompanyHandler(config)
+    handler = CompanyHandler(config)
     success = handler.run(update_time=args.update_time)
     if not success:
         print(f"ETL task finished but failed with update_time={args.update_time} (not uploaded to HDFS or no data)")
