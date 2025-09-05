@@ -36,6 +36,21 @@ def run_company_load_staging(**context):
     if result.returncode != 0:
         raise Exception(f"Staging load failed.\nStdout:\n{result.stdout}\nStderr:\n{result.stderr}")
 
+# Load mart task
+def run_company_load_mart(**context):
+    update_time = context['params'].get('update_time')
+    dt = datetime.strptime(update_time, "%Y-%m-%d")
+    json_path = f"/user/hadoop/api/ldnn/company/yyyy={dt.year}/mm={dt.month:02d}/dd={dt.day:02d}/data.json"
+    config_path = os.path.join(PROJECT_ROOT, 'configuration', 'load_mart', 'ldnn', 'company.toml')
+    script_path = os.path.join(PROJECT_ROOT, 'tasks', 'load_mart', 'ldnn_company_load_mart.py')
+    python_bin = "/home/hadoop/miniconda3/envs/hadoop/bin/python3"
+    cmd = f"/home/hadoop/spark-3.3.1/bin/spark-submit --master yarn --deploy-mode client --conf spark.yarn.appMasterEnv.PYSPARK_PYTHON={python_bin} --conf spark.executorEnv.PYSPARK_PYTHON={python_bin} {script_path} --json-path {json_path} --update-time {update_time} --config {config_path}"
+    print("[DEBUG] spark-submit command:", cmd)
+    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    print(result.stdout)
+    print(result.stderr)
+    if result.returncode != 0:
+        raise Exception(f"Mart load failed.\nStdout:\n{result.stdout}\nStderr:\n{result.stderr}")
 
 default_args = {
     'owner': 'hadoop',
@@ -70,5 +85,12 @@ step2_task = PythonOperator(
     dag=dag,
 )
 
-step1_task >> step2_task
+step3_task = PythonOperator(
+    task_id='ldnn_company_load_mart',
+    python_callable=run_company_load_mart,
+    provide_context=True,
+    dag=dag,
+)
+
+step1_task >> step2_task >> step3_task
 

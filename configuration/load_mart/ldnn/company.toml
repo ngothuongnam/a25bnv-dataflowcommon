@@ -1,0 +1,24 @@
+[mart]
+table = "ldnn.company"
+columns = [
+    "id",
+    "loaiGiayPhepId",
+    "loaiGiayPhep",
+    "xuPhatId",
+    "xuPhat",
+    "soGiayPhep",
+    "ngayCapGiayPhep",
+    "tenCongTy",
+    "tenVietTat",
+    "nguoiDaiDien",
+    "diaChi",
+    "soDienThoai",
+    "soFax",
+    "email",
+    "loaiHinhId",
+    "loaiHinh",
+    "vonDieuLe",
+    "update_time"
+]
+jdbc_url = "jdbc:sqlserver://10.28.0.1:1433;databaseName=mart"
+jdbc_properties = { user = "gem_admin", password = "wgBNnX9GZVjF", driver = "com.microsoft.sqlserver.jdbc.SQLServerDriver" }
