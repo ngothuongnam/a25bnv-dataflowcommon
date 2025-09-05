@@ -20,5 +20,5 @@ columns = [
     "vonDieuLe",
     "update_time"
 ]
-jdbc_url = "jdbc:sqlserver://10.28.0.1:1433;databaseName=mart"
+jdbc_url = "jdbc:sqlserver://10.28.0.1:1433;databaseName=mart;trustServerCertificate=true"
 jdbc_properties = { user = "gem_admin", password = "wgBNnX9GZVjF", driver = "com.microsoft.sqlserver.jdbc.SQLServerDriver" }
