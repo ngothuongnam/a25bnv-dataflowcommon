@@ -1,56 +1,50 @@
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from datetime import datetime, timedelta
-import sys
 import os
 import subprocess
 
 PROJECT_ROOT = '/home/hadoop/a25bnv-dataflowcommon'
+PYTHON_BIN = "/home/hadoop/miniconda3/envs/hadoop/bin/python3"
+SPARK_SUBMIT = "/home/hadoop/spark-3.3.1/bin/spark-submit"
 
-# Fetch API task
-def run_company_etl(**context):
+# Helper get update_time
+def get_update_time(context):
     update_time = context['params'].get('update_time')
-    config_path = os.path.join(PROJECT_ROOT, 'configuration', 'fetch', 'ldnn', 'company.toml')
-    script_path = os.path.join(PROJECT_ROOT, 'tasks', 'fetch', 'ldnn', 'company_fetch.py')
-    python_bin = "/home/hadoop/miniconda3/envs/hadoop/bin/python3"
-    cmd = f"{python_bin} {script_path} --config {config_path} --update-time {update_time}"
-    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-    print(result.stdout)
-    print(result.stderr)
-    if result.returncode != 0:
-        raise Exception(f"ETL script failed.\nStdout:\n{result.stdout}\nStderr:\n{result.stderr}")
+    if not update_time or '{{' in str(update_time):
+        execution_date = context['execution_date']
+        update_time = (execution_date - timedelta(days=1)).strftime('%Y-%m-%d')
+    return update_time
 
-# Load staging task
-def run_company_load_staging(**context):
-    update_time = context['params'].get('update_time')
-    mapping_config = os.path.join(PROJECT_ROOT, 'configuration', 'load_staging', 'ldnn', 'company.toml')
+# Task generic
+def run_script(task_type, **context):
+    update_time = get_update_time(context)
     dt = datetime.strptime(update_time, "%Y-%m-%d")
     json_path = f"/user/hadoop/api/ldnn/company/yyyy={dt.year}/mm={dt.month:02d}/dd={dt.day:02d}/data.json"
-    script_path = os.path.join(PROJECT_ROOT, 'tasks', 'load_staging', 'ldnn', 'company_load_staging.py')
-    python_bin = "/home/hadoop/miniconda3/envs/hadoop/bin/python3"
-    cmd = f"/home/hadoop/spark-3.3.1/bin/spark-submit --master yarn --deploy-mode client --conf spark.yarn.appMasterEnv.PYSPARK_PYTHON={python_bin} --conf spark.executorEnv.PYSPARK_PYTHON={python_bin} {script_path} --json-path {json_path} --update-time {update_time} --config {mapping_config}"
-    print("[DEBUG] spark-submit command:", cmd)
+    config_map = {
+        'fetch': os.path.join(PROJECT_ROOT, 'configuration', 'fetch', 'ldnn', 'company.toml'),
+        'staging': os.path.join(PROJECT_ROOT, 'configuration', 'load_staging', 'ldnn', 'company.toml'),
+        'mart': os.path.join(PROJECT_ROOT, 'configuration', 'load_mart', 'ldnn', 'company.toml'),
+    }
+    script_map = {
+        'fetch': os.path.join(PROJECT_ROOT, 'tasks', 'fetch', 'ldnn', 'company_fetch.py'),
+        'staging': os.path.join(PROJECT_ROOT, 'tasks', 'load_staging', 'ldnn', 'company_load_staging.py'),
+        'mart': os.path.join(PROJECT_ROOT, 'tasks', 'load_mart', 'ldnn', 'company_load_mart.py'),
+    }
+    config_path = config_map[task_type]
+    script_path = script_map[task_type]
+    if task_type == 'fetch':
+        cmd = f"{PYTHON_BIN} {script_path} --config {config_path} --update-time {update_time}"
+    else:
+        cmd = f"{SPARK_SUBMIT} --master yarn --deploy-mode client --conf spark.yarn.appMasterEnv.PYSPARK_PYTHON={PYTHON_BIN} --conf spark.executorEnv.PYSPARK_PYTHON={PYTHON_BIN} {script_path} --json-path {json_path} --update-time {update_time} --config {config_path}"
+    print(f"[DEBUG] {task_type} command:", cmd)
     result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     print(result.stdout)
     print(result.stderr)
     if result.returncode != 0:
-        raise Exception(f"Staging load failed.\nStdout:\n{result.stdout}\nStderr:\n{result.stderr}")
+        raise Exception(f"{task_type.capitalize()} task failed.\nStdout:\n{result.stdout}\nStderr:\n{result.stderr}")
 
-# Load mart task
-def run_company_load_mart(**context):
-    update_time = context['params'].get('update_time')
-    dt = datetime.strptime(update_time, "%Y-%m-%d")
-    json_path = f"/user/hadoop/api/ldnn/company/yyyy={dt.year}/mm={dt.month:02d}/dd={dt.day:02d}/data.json"
-    config_path = os.path.join(PROJECT_ROOT, 'configuration', 'load_mart', 'ldnn', 'company.toml')
-    script_path = os.path.join(PROJECT_ROOT, 'tasks', 'load_mart', 'ldnn', 'company_load_mart.py')
-    python_bin = "/home/hadoop/miniconda3/envs/hadoop/bin/python3"
-    cmd = f"/home/hadoop/spark-3.3.1/bin/spark-submit --master yarn --deploy-mode client --conf spark.yarn.appMasterEnv.PYSPARK_PYTHON={python_bin} --conf spark.executorEnv.PYSPARK_PYTHON={python_bin} {script_path} --json-path {json_path} --update-time {update_time} --config {config_path}"
-    print("[DEBUG] spark-submit command:", cmd)
-    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-    print(result.stdout)
-    print(result.stderr)
-    if result.returncode != 0:
-        raise Exception(f"Mart load failed.\nStdout:\n{result.stdout}\nStderr:\n{result.stderr}")
+# Airflow DAG
 
 default_args = {
     'owner': 'hadoop',
@@ -73,21 +67,21 @@ dag = DAG(
 
 step1_task = PythonOperator(
     task_id='ldnn_company_to_hdfs',
-    python_callable=run_company_etl,
+    python_callable=lambda **context: run_script('fetch', **context),
     provide_context=True,
     dag=dag,
 )
 
 step2_task = PythonOperator(
     task_id='ldnn_company_load_staging',
-    python_callable=run_company_load_staging,
+    python_callable=lambda **context: run_script('staging', **context),
     provide_context=True,
     dag=dag,
 )
 
 step3_task = PythonOperator(
     task_id='ldnn_company_load_mart',
-    python_callable=run_company_load_mart,
+    python_callable=lambda **context: run_script('mart', **context),
     provide_context=True,
     dag=dag,
 )
