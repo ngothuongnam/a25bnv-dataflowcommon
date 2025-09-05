@@ -42,7 +42,7 @@ def run_company_load_mart(**context):
     dt = datetime.strptime(update_time, "%Y-%m-%d")
     json_path = f"/user/hadoop/api/ldnn/company/yyyy={dt.year}/mm={dt.month:02d}/dd={dt.day:02d}/data.json"
     config_path = os.path.join(PROJECT_ROOT, 'configuration', 'load_mart', 'ldnn', 'company.toml')
-    script_path = os.path.join(PROJECT_ROOT, 'tasks', 'load_mart', 'ldnn_company_load_mart.py')
+    script_path = os.path.join(PROJECT_ROOT, 'tasks', 'load_mart', 'ldnn', 'company_load_mart.py')
     python_bin = "/home/hadoop/miniconda3/envs/hadoop/bin/python3"
     cmd = f"/home/hadoop/spark-3.3.1/bin/spark-submit --master yarn --deploy-mode client --conf spark.yarn.appMasterEnv.PYSPARK_PYTHON={python_bin} --conf spark.executorEnv.PYSPARK_PYTHON={python_bin} {script_path} --json-path {json_path} --update-time {update_time} --config {config_path}"
     print("[DEBUG] spark-submit command:", cmd)
