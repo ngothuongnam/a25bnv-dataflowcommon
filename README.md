@@ -41,7 +41,7 @@ a25bnv-dataflowcommon/
 ### 1. Fetch Layer (API → HDFS)
 - **ApiHandler**: Base class chứa `__init__(config)`, abstract method `fetch_api` và logic handle API chung
 - **LdnnHandler**: Kế thừa ApiHandler override fetch_api để xử lý logic cho nguồn LDNN
-- **CompanyHandler**: Kế thừa LdnnHandler, implement hàm `run()` riêng cho company
+- **CompanyHandler**: Kế thừa LdnnHandler để chỉ định nó là class xử lý fetching cho company
 
 ### 2. Load Staging Layer (HDFS → Hive)
 - **BaseStagingLoader**: Base class với logic đọc JSON, áp dụng mapping, ghi vào Hive
